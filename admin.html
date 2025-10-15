@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TimePass</title>
+<style>
+body {
+    margin:0;
+    padding:20px;
+    font-family: Arial, sans-serif;
+    background-color: #2196f3;
+    background: url("https://i.pinimg.com/1200x/51/c8/27/51c827238cb6e7e935efe3f1d711c3a2.jpg") no-repeat center center fixed;
+    background-size: cover;
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items: flex-start;
+    margin-left: 5vw;
+    min-height:100vh;
+    /* overflow-y: hidden; */
+}
+
+h1 {
+    font-size:2rem;
+    margin-bottom:20px;
+    text-align:center;
+}
+
+.container {
+    background: rgba(211, 31, 31, 0.6);
+    padding:20px;
+    border-radius:15px;
+    width:90%;
+    max-width:650px;
+    text-align:center;
+    box-shadow:0 8px 20px rgba(0,0,0,0.5);
+}
+
+input {
+    width:80%;
+    padding:10px;
+    margin:8px 0;
+    border-radius:5px;
+    border:1px solid #555;
+    background: #1e1e1e;
+    color:#fff;
+    font-size:1rem;
+}
+
+select {
+    width:85%;
+    padding:12px 15px;
+    margin:10px 0;
+    border-radius:8px;
+    border:1px solid #00e5ff;
+    background: linear-gradient(45deg, #00bcd4, #2196f3);
+    color:#fff;
+    font-size:1rem;
+    appearance: none;
+    outline: none;
+    transition: all 0.3s ease;
+    cursor:pointer;
+    background-size: 200% auto;
+}
+
+select:hover {
+    background-position: right center;
+    box-shadow: 0 0 10px rgba(0,229,255,0.6);
+    transform: scale(1.03);
+}
+
+select option {
+    background:#1e1e1e;
+    color:#fff;
+    padding:10px;
+}
+
+button {
+    padding:10px 20px;
+    margin-top:10px;
+    border:none;
+    border-radius:5px;
+    background:#00bcd4;
+    color:#fff;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover {
+    background:#0097a7;
+    transform: scale(1.05);
+}
+
+#outputBox {
+    margin-top:15px;
+    padding:15px;
+    background:#1e1e1e;
+    border-radius:5px;
+    border:1px solid #555;
+    white-space:pre-line;
+    text-align:center;
+}
+
+.clock-container {
+    margin-top:20px;
+    display:flex;
+    justify-content:space-around;
+    width:100%;
+    max-width:600px;
+}
+
+.clock {
+    background: rgba(255,255,255,0.1);
+    padding:15px;
+    border-radius:10px;
+    flex:1;
+    margin:0 10px;
+    text-align:center;
+    font-size:1.2rem;
+}
+#ropOutput {
+    margin-top:15px;
+    padding:15px;
+    background:#1e1e1e;
+    border-radius:5px;
+    border:1px solid #555;
+    white-space:pre-line;
+    width: 80%;         /* same as input width */
+    max-width: 650px;   /* same as container max-width */
+}
+
+.clock h2 { margin-bottom:8px; font-size:1rem; color:#00e5ff; }
+</style>
+</head>
+<body>
+
+<h1>Forum helper</h1>
+<div class="container">
+<input type="text" id="idInput" placeholder="Enter ID number (for approved/pov)" onkeydown="handleEnter(event, 'keywordInput')">
+
+<select id="keywordInput" onchange="generateFormat()" onkeydown="handleEnter(event, 'reasonInput')">
+    <option value="">Select action...</option>
+    <option value="approved">approved</option>
+    <option value="rop">ROP</option>
+    <option value="rejected">rejected</option>
+    <option value="closed">Closed</option>
+    <option value="pov">pov</option>
+    <option value="onconsideration">On Consideration</option>
+    <option value="nothingsus">Nothing Sus</option>
+    <option value="povrequired">POV Required?</option>
+    <option value="finalpov">Final POV</option>
+</select>
+
+<input type="text" id="reasonInput" placeholder="Enter reason (for approved)" onkeydown="handleEnter(event, 'copyButton')">
+
+<div id="outputBox">Select action, ID, and reason above to see the format...</div>
+<button id="copyButton" onclick="copyBBCode()">📋 Copy BBCode</button>
+</div>
+
+<div id="ropContainer" style="display:none; margin-top:15px;">
+<input type="text" id="ropId" placeholder="Enter ID">
+
+<input type="text" id="ropTime" placeholder="Enter time (if jail), days(if ban) and reason if sendmsg">
+
+<input type="text" id="ropReason" placeholder="Enter reason with /threads/xxxxxx/">
+
+<select id="ropType" onchange="updateRopOutput()">
+    <option value="">Select punishment</option>
+    <option value="/jail">/jail</option>
+    <option value="/ban">/ban</option>
+    <option value="/warn">/warn</option>
+    <option value="/sendmsg">/sendmsg</option> <!-- Added sendmsg -->
+</select>
+
+<div id="ropOutput" style="margin-top:10px; padding:10px; background:#1e1e1e; color:#fff; border-radius:5px;"></div>
+</div>
+
+<div class="clock-container">
+<div class="clock">
+    <h2>OOC Time</h2>
+    <div id="oocClock"></div>
+</div>
+<div class="clock">
+    <h2>IC Time</h2>
+    <div id="icClock"></div>
+</div>
+</div>
+
+<script>
+function generateFormat() {
+    const keyword = document.getElementById("keywordInput").value.trim().toLowerCase();
+    const id = document.getElementById("idInput").value.trim();
+    const reason = document.getElementById("reasonInput").value.trim();
+    const output = document.getElementById("outputBox");
+
+    if (keyword === "approved") {
+        if(id && reason) {
+            output.textContent = `Upon reviewing the evidence, I have decided to Accept this report.\nID ${id} will receive a punishment for ${reason}.`;
+        } else {
+            output.textContent = "Enter both ID number and reason for approved report.";
+        }
+    } else if (keyword === "rejected") {
+        output.innerHTML = `Upon reviewing the evidence, I have decided to Deny this report.<br>(After checking the evidence there is no Rule Break found)<br>
+        Please Refer to the <a href="https://gta5grand.com/forum/threads/32/" target="_blank" style="color:#00e5ff; text-decoration:underline;">Rules for Filing a complaint</a><br>And file a new complaint.`;
+    } else if (keyword === "closed") {
+        output.innerHTML = `Upon reviewing the evidence, I have decided to Close this report.<br>(Close on request)<br>
+        Please Refer to the <a href="https://gta5grand.com/forum/threads/32/" target="_blank" style="color:#00e5ff; text-decoration:underline;">Rules for Filing a complaint</a><br>And file a new complaint.`;
+    } else if (keyword === "pov") {
+        if(id) {
+            output.textContent = `Requesting Thread Owner ID ${id} to Provide Event POV\nYou have 12 hours to do so`;
+        } else {
+            output.textContent = "Enter ID number for POV request.";
+        }
+    } else if (keyword === "onconsideration") {
+        output.textContent = `On Consideration`;
+    } else if (keyword === "nothingsus") {
+        output.textContent = `Upon reviewing the evidence, I have decided to Deny this report.\nNothing Suspicious was observed in Provide Event POV`;
+    } else if (keyword === "rop") {
+        document.getElementById("ropContainer").style.display = "block";
+        output.style.display = "none";
+    } else if (keyword === "povrequired") {
+        output.textContent = `Explanation: Thread owner: \n\nSuspicion: POV request required?\n\nVictim POV:      \n\nTimestamp: \n\nThread: \n<@&1121483727445430362>`;
+    } else if (keyword === "finalpov") {
+        output.textContent = `Explanation: Thread owner: \n\nSuspicion: \n\nVictim POV:     \n\nKiller POV: \n\nTimestamp: \n\nThread: \n<@&1121483727445430362>`;
+    } else {
+        output.textContent = "Select action, ID, and reason above to see the format...";
+        document.getElementById("ropContainer").style.display = "none";
+        output.style.display = "block";
+    }
+}
+
+function handleEnter(event, nextId) {
+    if(event.key === "Enter") {
+        event.preventDefault();
+        const nextElement = document.getElementById(nextId);
+        if(nextElement) nextElement.focus();
+    }
+}
+
+function copyBBCode() {
+    const keyword = document.getElementById("keywordInput").value.trim().toLowerCase();
+    let textToCopy = "";
+
+    if (keyword === "rop") {
+        const ropOutput = document.getElementById("ropOutput").textContent;
+        if (ropOutput) {
+            textToCopy = ropOutput; // plain text
+        } else {
+            textToCopy = "ROP info incomplete. Fill all fields above.";
+        }
+    } else {
+        const id = document.getElementById("idInput").value.trim();
+        const reason = document.getElementById("reasonInput").value.trim();
+
+        if (keyword === "approved" && id && reason) {
+            textToCopy = `[center]Upon reviewing the evidence, I have decided to [color=green][b]Accept[/b][/color] this report.\n[b]ID[/b] [color=purple][b]${id}[/b][/color] will receive a punishment for [color=darkred][b]${reason}[/b][/color].[/center]`;
+        } else if (keyword === "rejected") {
+            textToCopy = `[center]Upon reviewing the evidence, I have decided to [color=red][b]Deny[/b][/color] this report.\n([color=cyan]After checking the evidence there is no Rule Break found[/color])\nPlease Refer to the [url=https://gta5grand.com/forum/threads/32/]Rules for Filing a complaint[/url]\nAnd file a new complaint.[/center]`;
+        } else if (keyword === "closed") {
+            textToCopy = `[center]Upon reviewing the evidence, I have decided to [color=red][b]Close[/b][/color] this report.\n([color=cyan]Close on request[/color])\nPlease Refer to the [url=https://gta5grand.com/forum/threads/32/]Rules for Filing a complaint[/url]\nAnd file a new complaint.[/center]`;
+        } else if (keyword === "pov" && id) {
+            textToCopy = `[center]Requesting [b]ID[/b] [color=purple][b]${id}[/b][/color] to Provide Your POV\nYou have [color=darkred][b]12 hours [/b][/color]to do so[/center]`;
+        } else if (keyword === "onconsideration") {
+            textToCopy = `[center][color=skyblue][b]On Consideration[/b][/color][/center]`;
+        } else if (keyword === "nothingsus") {
+            textToCopy = `[center]Upon reviewing the evidence, I have decided to [color=red][b]Deny[/b][/color] this report.\nNothing Suspicious was observed in [b]Provided POV[/b][/center]`;
+        } else {
+            textToCopy = "Nothing to copy. Please fill valid input.";
+        }
+    }
+
+    navigator.clipboard.writeText(textToCopy);
+    alert("Copied to clipboard! ✅");
+}
+
+// === ROP FUNCTIONALITY ONLY ===
+function updateRopOutput() {
+    const id = document.getElementById("ropId").value.trim();
+    const type = document.getElementById("ropType").value;
+    let time = document.getElementById("ropTime").value.trim();
+    const reason = document.getElementById("ropReason").value.trim();
+    const output = document.getElementById("ropOutput");
+    const yourName = "Anshul Narcos";
+
+    // Extract /threads/xxxxx/ from reason if exists
+    const match = reason.match(/\/threads\/\d+\//);
+    const threadPart = match ? match[0] : "";
+
+    // Validation
+    if (!id || !type || ((type !== '/sendmsg') && !threadPart) || ((type === '/jail' || type === '/ban') && !time)) {
+        output.textContent = "Enter valid ID, punishment, time (if required), thread link (if required), and reason.";
+        return;
+    }
+
+    let command = "";
+
+    if (type === '/jail') {
+        time = time ? `${time} 0` : "0 0";
+        command = `${type} ${id} ${time} ${threadPart} By ${yourName}`;
+    } else if (type === '/warn') {
+        time = "0";
+        command = `${type} ${id} ${time} ${threadPart} By ${yourName}`;
+    } else if (type === '/ban') {
+        command = `${type} ${id} ${time} ${threadPart} By ${yourName}`;
+    } else if (type === '/sendmsg') {
+        command = `${type} ${id} ${time} ${threadPart}`;
+    }
+
+    output.textContent = command;
+}
+
+
+
+// CLOCKS
+function updateClocks() {
+    const now = new Date();
+
+    let oocHours = now.getHours();
+    let oocMinutes = now.getMinutes().toString().padStart(2,'0');
+    let ampm = oocHours >= 12 ? "PM" : "AM";
+    oocHours = oocHours % 12;
+    oocHours = oocHours ? oocHours : 12;
+    document.getElementById("oocClock").textContent = `${oocHours}:${oocMinutes} ${ampm}`;
+
+    let icTime = new Date(now.getTime() - (4*60+30)*60000);
+    let icHours = icTime.getHours().toString().padStart(2,'0');
+    let icMinutes = icTime.getMinutes().toString().padStart(2,'0');
+    document.getElementById("icClock").textContent = `${icHours}:${icMinutes}`;
+}
+
+setInterval(updateClocks, 1000);
+updateClocks();
+</script>
+
+</body>
+</html>
